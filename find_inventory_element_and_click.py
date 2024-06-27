@@ -1,39 +1,54 @@
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
+import time
 
-def find_inventory_element_and_click(driver, source, timeout = 100):
+def find_inventory_element_and_click(driver, image_filename, timeout=100):
     """
-    Finds the element in the inventory page, and then clicks on the element
+    Finds the button in the inventory page containing the specified image, and then clicks on the button.
 
     Args:
         driver (WebDriver): The Selenium WebDriver instance.
-        source (str): The source of the image to be located. e.g. ".//img[@src='/assets/items/gem-ruby.png']"
-        timeout (int, optional): The maximum time to wait for the element to be present, in seconds. Default is 10 seconds.
+        image_filename (str): The filename or unique part of the image source. e.g. "gem-ruby.png"
+        timeout (int, optional): The maximum time to wait for the element to be present, in seconds. Default is 100 seconds.
 
-    Example Usage: 
-    find_inventory_element_and_click(driver, source = ".//img[@src='/assets/items/gem-ruby.png']")
-    
+    Returns:
+        bool: True if the button was found and clicked, False otherwise.
     """
-    # Assuming the webpage is already loaded
-    base_xpath = "/html/body/app-component/div/div/div/inventory-page/div/div[1]/div/div[3]/button["
-    found = False
+    # XPath to find the button containing the image
+    xpath = f"//button[.//img[contains(@src, '{image_filename}')]]"
 
-    for i in range(1, timeout + 1):
-        # Construct the full XPath for each button
-        full_xpath = base_xpath + str(i) + "]"
+    try:
+        # Wait for the button to be present
+        button = WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.XPATH, xpath))
+        )
+        
+        print(f"Button found: {button.get_attribute('outerHTML')}")
 
+        # Scroll the button into view
+        driver.execute_script("arguments[0].scrollIntoView(true);", button)
+
+        # Wait a short time after scrolling
+        time.sleep(1)
+
+        # Try different click methods
         try:
-            # Find the button element
-            element = driver.find_element(By.XPATH, full_xpath)
+            button.click()
+        except ElementClickInterceptedException:
+            print("Normal click failed, trying JavaScript click.")
+            driver.execute_script("arguments[0].click();", button)
 
-            # Check if the button contains the Ruby image
-            image = element.find_element(By.XPATH, source)
-            element.click()
-        except NoSuchElementException:
-            filler = 1+1
-        else:
-            found = True
+        print(f"Successfully clicked button containing image: {image_filename}")
+        return True
 
-        # Stop after max_items even if desired item not found
-        if i == timeout or found == True:
-            break
+    except TimeoutException:
+        print(f"Timeout: Button with image {image_filename} not found within {timeout} seconds.")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+    
+    return False
+
+# Example usage:
+# find_inventory_element_and_click(driver, image_filename="gem-ruby.png")
