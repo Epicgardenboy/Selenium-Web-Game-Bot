@@ -1,3 +1,4 @@
 loginInfo.py
 __pycache__/
 .venv/
+game_saves.db
