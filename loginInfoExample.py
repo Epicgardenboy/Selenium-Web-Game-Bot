@@ -7,3 +7,8 @@ passwordlist = [
     'Password One',
     'Password Two',
 ]
+
+namelist = [
+    'One',
+    'Two'
+]
